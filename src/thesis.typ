@@ -4,7 +4,7 @@
 // contents, then lays out the document body. Every customisable value is a
 // parameter with a sensible default.
 #import "theme.typ": default-theme, resolve-theme, theme-state
-#import "cover.typ": show-cover, default-cover-labels
+#import "cover.typ": show-cover, show-article-cover, default-cover-labels
 #import "article-header.typ": show-article-header, default-header-labels
 #import "layout.typ": show-layout
 
@@ -52,8 +52,12 @@
 
   // ── Feature toggles ──
   cover: true,
+  cover-style: "thesis",        // "thesis" | "article" (manuscript title page)
+  word-count: none,             // article cover only; e.g. wordometer's total-words
+  character-count: none,        // article cover only
   show-abstract: true,
   show-outline: true,
+  outline-break: false,         // page/column break after the outline
   header-footer: true,
   columns: 2,
 
@@ -81,7 +85,18 @@
   theme-state.update(th)
 
   // ── Cover page ──
-  if cover {
+  if cover and cover-style == "article" {
+    show-article-cover(
+      title: title,
+      authors: authors,
+      affiliations: affiliations,
+      email: email,
+      word-count: word-count,
+      character-count: character-count,
+      theme: th,
+      labels: cover-labels,
+    )
+  } else if cover {
     show-cover(
       title: title,
       authors: authors,
@@ -169,7 +184,7 @@
     text(font: th.font-sans, weight: "bold", fill: th.accent, size: 11pt)[Contents]
     v(0.4em)
     outline(depth: 3, indent: auto)
-    colbreak()
+    if outline-break { colbreak() }
   }
 
   body

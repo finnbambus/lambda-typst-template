@@ -10,7 +10,104 @@
   supervisor:    "Supervisor:",
   co-supervisor: "Co-supervisor:",
   logo:          "LOGO",
+  corresponding: "Corresponding Author:",
+  word-count:      "Word count:",
+  character-count: "Character count:",
 )
+
+// ─── ARTICLE COVER ──────────────────────────────────────────────────────────
+// Manuscript-style title page: centred title, author line with superscript
+// affiliation markers, and a footnote block with affiliations, corresponding
+// author, and optional word / character counts.
+#let show-article-cover(
+  title: "",
+  authors: (),
+  affiliations: (),
+  email: none,
+  word-count: none,
+  character-count: none,
+  theme: default-theme,
+  labels: (:),
+) = {
+  let accent = theme.accent
+  let font-sans = theme.font-sans
+  let font-serif = theme.font-serif
+  let lbl = default-cover-labels + labels
+
+  let author-list = if type(authors) == array { authors } else { (authors,) }
+  // The corresponding author: any entry with `corresponding: true`, else the first.
+  let has-marked = author-list.any(a => type(a) != str and a.at("corresponding", default: false))
+
+  set page(
+    margin: (left: 2.5cm, right: 2.5cm, top: 2.4cm, bottom: 2.4cm),
+    numbering: none,
+    header: none,
+    footer: none,
+  )
+
+  v(2fr)
+
+  // ── Title ────────────────────────────────────────────────────────────────
+  align(center, {
+    set par(justify: false, leading: 0.55em)
+    text(font: font-sans, fill: accent, weight: "bold", size: 26pt, title)
+  })
+
+  v(3fr)
+
+  // ── Author line ──────────────────────────────────────────────────────────
+  {
+    set text(font: font-sans, size: 13pt)
+    author-list.enumerate().map(((i, a)) => {
+      if type(a) == str { a } else {
+        let nums = a.at("affils", default: ())
+        let nums = if type(nums) == array { nums } else { (nums,) }
+        let corr = a.at("corresponding", default: not has-marked and i == 0)
+        let marks = nums.map(n => [#n]).join([,])
+        if corr { marks = if marks == none { [\*] } else { marks + [\*] } }
+        let name = if corr { text(weight: "bold", a.name) } else { a.name }
+        if marks == none { name } else { name + super(text(size: 8pt, marks)) }
+      }
+    }).join(", ")
+  }
+
+  v(0.9cm)
+
+  // ── Footnote block ───────────────────────────────────────────────────────
+  line(length: 4.5cm, stroke: 0.6pt)
+  v(0.35cm)
+  {
+    set text(font: font-serif, size: 10pt)
+    set par(leading: 0.45em)
+    for aff in affiliations {
+      super(text(size: 7pt, str(aff.id)))
+      h(2pt)
+      aff.text
+      linebreak()
+    }
+    if email != none {
+      let addr = if type(email) == array { email.at(0) } else { email }
+      super(text(size: 7pt, [\*]))
+      h(2pt)
+      lbl.corresponding + " "
+      link("mailto:" + addr, text(fill: accent, addr))
+    }
+  }
+
+  if word-count != none or character-count != none {
+    v(0.7cm)
+    set text(font: font-sans, size: 11pt)
+    if word-count != none {
+      lbl.word-count + " "
+      text(fill: accent, [#word-count])
+      linebreak()
+    }
+    if character-count != none {
+      lbl.character-count + " "
+      text(fill: accent, [#character-count])
+    }
+  }
+}
 
 #let show-cover(
   title: "",
